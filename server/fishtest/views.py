@@ -21,6 +21,9 @@ from pyramid.httpexceptions import HTTPFound, exception_response
 from pyramid.security import authenticated_userid, forget, has_permission, remember
 from pyramid.view import forbidden_view_config, view_config
 
+# magic constants
+max_games = 800000 
+sprt_max_games = 400000 
 
 def clear_cache():
     global last_time, last_tests
@@ -658,7 +661,6 @@ def validate_form(request):
     if stop_rule == "sprt":
         sprt_batch_size_games = 8
         assert sprt_batch_size_games % 2 == 0
-        assert request.rundb.chunk_size % sprt_batch_size_games == 0
         elo_model = request.POST["elo_model"]
         if elo_model not in ["BayesElo", "logistic", "normalized"]:
             raise Exception("Unknown Elo model")
@@ -671,9 +673,9 @@ def validate_form(request):
             batch_size=sprt_batch_size_games // 2,
         )  # game pairs
         # Limit on number of games played.
-        # Shouldn't be hit in practice as long as it is larger than > ~200000
-        # must scale with chunk_size to avoid overloading the server.
-        data["num_games"] = 2000 * request.rundb.chunk_size
+        # It is the intention that this bound is hit very rarely.
+        global sprt_max_games
+        data["num_games"] = sprt_max_games
     elif stop_rule == "spsa":
         data["num_games"] = int(request.POST["num-games"])
         if data["num_games"] <= 0:
@@ -699,7 +701,7 @@ def validate_form(request):
         if data["num_games"] <= 0:
             raise Exception("Number of games must be >= 0")
 
-    max_games = 4000 * request.rundb.chunk_size
+    global max_games
     if data["num_games"] > max_games:
         raise Exception("Number of games must be <= " + str(max_games))
 
@@ -824,7 +826,7 @@ def tests_modify(request):
             )
             return HTTPFound(location=request.route_url("tests"))
 
-        max_games = 4000 * request.rundb.chunk_size
+        global max_games
         if num_games > max_games:
             request.session.flash(
                 "Number of games must be <= " + str(max_games), "error"

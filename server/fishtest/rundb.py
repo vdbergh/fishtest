@@ -47,7 +47,6 @@ class RunDb:
         self.runs = self.db["runs"]
         self.deltas = self.db["deltas"]
 
-        self.chunk_size = 200
         self.task_duration = 900  # 15 minutes
 
         global last_rundb
