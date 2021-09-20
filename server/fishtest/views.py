@@ -831,11 +831,6 @@ def tests_modify(request):
             )
             return HTTPFound(location=request.route_url("tests"))
 
-        if num_games > existing_games:
-            # Create new chunks for the games
-            new_chunks = request.rundb.generate_tasks(num_games - existing_games)
-            run["tasks"] += new_chunks
-
         run["finished"] = False
         run["args"]["num_games"] = num_games
         run["args"]["priority"] = int(request.POST["priority"])

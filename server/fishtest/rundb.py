@@ -53,9 +53,6 @@ class RunDb:
         global last_rundb
         last_rundb = self
 
-    def generate_tasks(self, num_games):
-        return []
-
     def new_run(
         self,
         base_tag,
@@ -140,8 +137,7 @@ class RunDb:
             "base_same_as_master": base_same_as_master,
             # Will be filled in by tasks, indexed by task-id.
             # Starts as an empty list.
-            # generate_tasks() is currently a dummy
-            "tasks": self.generate_tasks(num_games),
+            "tasks": [],
             # Aggregated results
             "results": {"wins": 0, "losses": 0, "draws": 0, "pentanomial": 5 * [0]},
             "results_stale": False,
@@ -1052,10 +1048,6 @@ class RunDb:
             run["results_stale"] = True
             results = self.get_results(run)
             played_games = results["wins"] + results["losses"] + results["draws"]
-            if played_games < run["args"]["num_games"]:
-                run["tasks"] += self.generate_tasks(
-                    run["args"]["num_games"] - played_games
-                )
             run["finished"] = False
             if "sprt" in run["args"] and "state" in run["args"]["sprt"]:
                 fishtest.stats.stat_util.update_SPRT(results, run["args"]["sprt"])
