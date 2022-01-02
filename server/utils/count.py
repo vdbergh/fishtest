@@ -5,12 +5,12 @@ import pymongo
 if __name__ == "__main__":
     client = pymongo.MongoClient()
     collection = client["fishtest_new"]["runs_new"]
-    #    pprint.pprint(list(collection.list_indexes()))
-    runs = collection.find({}, {"start_time": 1}).sort("start_time", 1)
+#    pprint.pprint(list(collection.list_indexes()))
+    runs=collection.find({"finished" : True}, {"last_updated":True}).sort("last_updated", 1)
+#    pprint.pprint(runs.explain())
     count = 0
     t0 = datetime.datetime.utcnow()
     for run in runs:
-        #        pprint.pprint(run)
         r_id = run["_id"]
         collection.update_one({"_id": r_id}, {"$set": {"count": count}})
         count += 1
