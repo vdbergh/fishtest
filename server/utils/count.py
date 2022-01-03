@@ -4,10 +4,9 @@ import pymongo
 
 if __name__ == "__main__":
     client = pymongo.MongoClient()
-    collection = client["fishtest_new"]["runs_new"]
-#    pprint.pprint(list(collection.list_indexes()))
-    runs=collection.find({"finished" : True}, {"last_updated":True}).sort("last_updated", 1)
-#    pprint.pprint(runs.explain())
+    collection = client["fishtest_new"]["runs"]
+    collection.drop_index([("count", 1)])
+    runs=collection.find({}, {"start_time":True}).sort("start_time", 1)
     count = 0
     t0 = datetime.datetime.utcnow()
     for run in runs:
@@ -23,4 +22,9 @@ if __name__ == "__main__":
         )
     )
     runs.close()
+    collection.create_index([("count",1)], unique=True)
+    counters=client["fishtest_new"]["counters"]
+    counters.drop()
+    counters=client["fishtest_new"]["counters"]
+    counters.insert_one({'runs': count})
     client.close()

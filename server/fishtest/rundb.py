@@ -54,6 +54,7 @@ class RunDb:
             print('Not using "runs_new"')
             self.runs = self.db["runs"]
         self.deltas = self.db["deltas"]
+        self.counters = self.db["counters"]
         self.task_runs = []
 
         self.chunk_size = 200
@@ -169,7 +170,18 @@ class RunDb:
         if rescheduled_from:
             new_run["rescheduled_from"] = rescheduled_from
 
-        return self.runs.insert_one(new_run).inserted_id
+        inserted_id = [None]
+
+        def callback(session, inserted_id):
+            run_no = self.counters.find_one({}, session=session)["runs"]
+            new_run["count"] = run_no
+            self.counters.replace_one({}, {"runs": run_no + 1}, session=session)
+            inserted_id[0] = self.runs.insert_one(new_run, session=session).inserted_id
+
+        with self.conn.start_session() as session:
+            session.with_transaction(lambda x: callback(x, inserted_id))
+
+        return inserted_id[0]
 
     def get_machines(self):
         machines = []
