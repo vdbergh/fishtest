@@ -5,7 +5,10 @@ import pymongo
 if __name__ == "__main__":
     client = pymongo.MongoClient()
     collection = client["fishtest_new"]["runs"]
-    collection.drop_index([("count", 1)])
+    try:
+        collection.drop_index([("count", 1)])
+    except:
+        pass
     runs=collection.find({}, {"start_time":True}).sort("start_time", 1)
     count = 0
     t0 = datetime.datetime.utcnow()
