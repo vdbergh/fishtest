@@ -24,6 +24,7 @@ from fishtest.util import (
     get_chi2,
     post_in_fishcooking_results,
     remaining_hours,
+    value,
 )
 from fishtest.util import unique_key as unique_key_
 from fishtest.util import update_residuals, worker_name
@@ -54,7 +55,8 @@ class RunDb:
             print('Not using "runs_new"')
             self.runs = self.db["runs"]
         self.deltas = self.db["deltas"]
-        self.counters = self.db["counters"]
+
+        self.run_counter = value("runs", self.db["counters"])
         self.task_runs = []
 
         self.chunk_size = 200
@@ -171,9 +173,8 @@ class RunDb:
             new_run["rescheduled_from"] = rescheduled_from
 
         def callback(session):
-            run_no = self.counters.find_one({}, session=session)["runs"]
+            run_no = self.run_counter.next(session)
             new_run["count"] = run_no
-            self.counters.replace_one({}, {"runs": run_no + 1}, session=session)
             return self.runs.insert_one(new_run, session=session).inserted_id
 
         with self.conn.start_session() as session:

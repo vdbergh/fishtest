@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 import fishtest.stats.stat_util
 import numpy
 import scipy.stats
+import threading
 from zxcvbn import zxcvbn
 
 FISH_URL = "https://tests.stockfishchess.org/tests/view/"
@@ -447,3 +448,21 @@ def validate(schema, object, name):
                     return ret
         return ""
     return "Type {} is not supported".format(type(schema))
+
+
+class value:
+    def __init__(self, name, counters):
+        self.name = name
+        self.counters = counters
+
+    def next(self, session):
+        value = self.counters.find_one({}, session=session).get(self.name, 0)
+        self.counters.replace_one({}, {self.name: value + 1}, session=session)
+        return value
+
+    def get(self, session=None):
+        value = self.counters.find_one({}, session=session).get(self.name, 0)
+        return value
+
+    def set(self, value, session=None):
+        self.counters.replace_one({}, {self.name: value}, session=session)
