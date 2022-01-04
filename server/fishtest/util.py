@@ -451,18 +451,21 @@ def validate(schema, object, name):
 
 
 class value:
-    def __init__(self, name, counters):
+    def __init__(self, name, registry, init=None):
         self.name = name
-        self.counters = counters
+        self.registry = registry
+        self.init=init
 
     def next(self, session):
-        value = self.counters.find_one({}, session=session).get(self.name, 0)
-        self.counters.replace_one({}, {self.name: value + 1}, session=session)
+        value = self.get(session)
+        if value is None:
+            value = 0
+        self.set(value+1, session)
         return value
 
     def get(self, session=None):
-        value = self.counters.find_one({}, session=session).get(self.name, 0)
+        value = self.registry.find_one({}, session=session).get(self.name, self.init)
         return value
 
     def set(self, value, session=None):
-        self.counters.replace_one({}, {self.name: value}, session=session)
+        self.registry.replace_one({}, {self.name: value}, session=session)

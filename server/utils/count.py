@@ -26,8 +26,8 @@ if __name__ == "__main__":
     )
     runs.close()
     collection.create_index([("count",1)], unique=True)
-    counters=client["fishtest_new"]["counters"]
+    counters=client["fishtest_new"]["registry"]
     counters.drop()
-    counters=client["fishtest_new"]["counters"]
+    counters=client["fishtest_new"]["registry"]
     counters.insert_one({'runs': count})
     client.close()

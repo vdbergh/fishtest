@@ -56,7 +56,7 @@ class RunDb:
             self.runs = self.db["runs"]
         self.deltas = self.db["deltas"]
 
-        self.run_counter = value("runs", self.db["counters"])
+        self.run_counter = value("runs", self.db["registry"])
         self.task_runs = []
 
         self.chunk_size = 200
