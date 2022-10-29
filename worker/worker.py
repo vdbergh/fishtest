@@ -5,6 +5,7 @@ import datetime
 import getpass
 import glob
 import hashlib
+import json
 import math
 import multiprocessing
 import os
@@ -51,7 +52,7 @@ from games import (
     send_api_post_request,
     str_signal,
 )
-from updater import update
+from updater import md5sums, update
 
 WORKER_VERSION = 180
 HTTP_TIMEOUT = 30.0
@@ -1344,6 +1345,23 @@ def worker():
         print("Exception verifying worker version:\n", e, sep="", file=sys.stderr)
         return 1
 
+    # Check if we have modified installation files
+    md5sums_ = md5sums(worker_dir)
+    md5sums_file = os.path.join(worker_dir, "md5sums")
+    tainted = False
+    if os.path.exists(md5sums_file):
+        with open(md5sums_file, "r") as f:
+            md5sums_factory = json.load(f)
+        for k, v in md5sums_factory.items():
+            if v != md5sums_[k]:
+                print("'{}' has been modified!".format(k))
+                tainted = True
+    else:
+        print("md5sums file does not exist")
+        tainted = True
+    if tainted:
+        print("This worker is tainted...")
+
     # Make sure we have a working cutechess-cli
     if not setup_cutechess():
         return 1
@@ -1364,6 +1382,7 @@ def worker():
         "min_threads": options.min_threads,
         "username": options.username,
         "version": WORKER_VERSION,
+        "modified": tainted,
         "python_version": (
             sys.version_info.major,
             sys.version_info.minor,

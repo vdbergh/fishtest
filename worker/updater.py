@@ -1,5 +1,7 @@
 import datetime
 import glob
+import hashlib
+import json
 import os
 import platform
 import shutil
@@ -12,6 +14,7 @@ import requests
 start_dir = os.getcwd()
 
 WORKER_URL = "https://github.com/glinscott/fishtest/archive/master.zip"
+FILE_LIST = ["updater.py", "worker.py", "games.py"]
 
 
 def do_restart():
@@ -25,7 +28,25 @@ def do_restart():
     os.execv(sys.executable, args)  # This does not return!
 
 
+def md5sums(install_dir):
+    md5dir = {}
+    for file in FILE_LIST:
+        item = os.path.join(install_dir, file)
+        with open(item, "rb") as f:
+            bytes = f.read()  # read file as bytes
+            md5 = hashlib.md5(bytes).hexdigest()
+            md5dir[file] = md5
+    return md5dir
+
+
 def update(restart=True, test=False):
+    # worker_dir=<worker_dir>
+    # update_dir=<worker_dir>/update
+    # worker_zip=<worker_dir>/update/wk.zip
+    # prefix=fishtest-master
+    # worker_src=<worker_dir>/update/fishtest-master/worker
+    # testing_dir=<worker_dir>/testing
+    # bkp_testing_dir=<worker_dir>/_testing_<timestamp>
     worker_dir = os.path.dirname(os.path.realpath(__file__))
     update_dir = os.path.join(worker_dir, "update")
     if not os.path.exists(update_dir):
@@ -55,6 +76,11 @@ def update(restart=True, test=False):
         copy_tree(worker_src, worker_dir)
     else:
         file_list = os.listdir(worker_src)
+
+    md5sums_ = json.dumps(md5sums(worker_src), indent=4)
+    with open(os.path.join(worker_dir, "md5sums"), "w") as f:
+        f.write(md5sums_ + "\n")
+
     shutil.rmtree(update_dir)
 
     # Rename the testing_dir to backup possible user custom files
