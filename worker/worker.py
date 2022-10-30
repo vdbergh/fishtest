@@ -5,6 +5,7 @@ import datetime
 import getpass
 import glob
 import hashlib
+import json
 import math
 import multiprocessing
 import os
@@ -47,6 +48,7 @@ from games import (
     download_from_github,
     format_return_code,
     log,
+    requests_get,
     run_games,
     send_api_post_request,
     str_signal,
@@ -213,6 +215,30 @@ def safe_sleep(f):
         time.sleep(f)
     except:
         print("\nSleep interrupted...")
+
+
+def download_md5sums():
+    ret = {}
+    md5sums_url = (
+        "https://raw.githubusercontent.com/vdbergh/fishtest/actions/worker/md5sums"
+    )
+    try:
+        ret = json.loads(requests_get(md5sums_url).content)
+    except:
+        print("Unable to download {}".format(md5sums_url))
+    return ret
+
+
+def file_md5sums(install_dir):
+    md5dir = {}
+    FILE_LIST = ["updater.py", "worker.py", "games.py"]
+    for file in FILE_LIST:
+        item = os.path.join(install_dir, file)
+        with open(item, "rb") as f:
+            bytes = f.read()  # read file as bytes
+            md5 = hashlib.md5(bytes).hexdigest()
+            md5dir[file] = md5
+    return md5dir
 
 
 def verify_credentials(remote, username, password, cached):
@@ -1348,6 +1374,18 @@ def worker():
     if not setup_cutechess():
         return 1
 
+    md5sums = download_md5sums()
+    if md5sums == {}:
+        return 1
+    md5sums_ = file_md5sums(worker_dir)
+    tainted = False
+    for k, v in md5sums.items():
+        if v != md5sums_[k]:
+            print("'{}' has been modified!".format(k))
+            tainted = True
+    if tainted:
+        print("This worker is tainted...")
+
     # Assemble the config/options data as well as some other data in a
     # "worker_info" dictionary.
     # This data will be sent to the server when a new task is requested.
@@ -1364,6 +1402,7 @@ def worker():
         "min_threads": options.min_threads,
         "username": options.username,
         "version": WORKER_VERSION,
+        "modified": tainted,
         "python_version": (
             sys.version_info.major,
             sys.version_info.minor,
