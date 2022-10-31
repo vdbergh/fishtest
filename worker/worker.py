@@ -227,7 +227,9 @@ def text_hash(file):
 
 
 def generate_sri(install_dir):
-    sri = {}
+    sri = {
+        "__version": WORKER_VERSION,
+        }
     for file in FILE_LIST:
         item = os.path.join(install_dir, file)
         sri[file] = text_hash(item)
@@ -267,6 +269,7 @@ def verify_sri(install_dir):
 
 
 def download_sri():
+    print("Downloading {}".format(SRI_URL))
     try:
         ret = requests_get(SRI_URL).json()
     except:
@@ -284,6 +287,10 @@ def verify_remote_sri(install_dir):
     sri_ = download_sri()
     if sri_ is None:
         return None
+    version = sri_.get("__version", -1)
+    if version != WORKER_VERSION:
+        print("The master sri file has a different version. Ignoring!")
+        return True
     tainted = False
     for k, v in sri_.items():
         if k not in sri or v != sri[k]:
