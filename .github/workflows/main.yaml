@@ -22,6 +22,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       # Use MongoDb
       - name: Start MongoDB
@@ -32,6 +34,10 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+
+      # Verify sri hashes
+      - name: Verify sri hashes
+        run: python worker/worker.py --verify_sri
 
       # And run the tests
       - name: Install setuptools
