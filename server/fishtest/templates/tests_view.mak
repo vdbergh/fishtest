@@ -10,7 +10,7 @@
 
 % if show_task >= 0:
 <script>
-  document.documentElement.style="scroll-behavior:auto !important; overflow:hidden !important";
+  document.documentElement.style="scroll-behavior:auto; overflow:hidden;";
   function scroll_to(task_id) {
     document.getElementById("task" + task_id)
       .scrollIntoView();
@@ -38,7 +38,7 @@
     </script>
 % endif
 
-<div id="enclosure" ${"style=\"visibility:hidden !important;\"" if show_task >= 0 else "" |n}>
+<div id="enclosure" ${"style=\"visibility:hidden;\"" if show_task >= 0 else "" |n}>
 
 <h2>
   <span>${page_title}</span>
@@ -633,8 +633,8 @@
     .then( () => {
     % if show_task >= 0:
       scroll_to(${show_task});
-      document.getElementById("enclosure").style="visibility:visible !important;";
-      document.documentElement.style="scroll-behavior:auto !important; overflow:scroll !important";
+      document.getElementById("enclosure").style="visibility:visible;";
+      document.documentElement.style="overflow:scroll;";
     % endif
     });
 </script>
