@@ -99,8 +99,6 @@ async function main_follow_loop() {
       continue;
     }
     notifications = get_notifications();
-    // Instrumentation
-    console.log("notifications before work=", JSON.stringify(notifications));
     let work = [];
     json.forEach((entry) => {
       let run_id = entry["run_id"];
@@ -109,8 +107,6 @@ async function main_follow_loop() {
         notifications.remove(run_id);
       }
     });
-    // Instrumentation
-    console.log("notifications after work=", JSON.stringify(notifications));
     save_notifications(notifications);
     work.forEach((entry) => {
       notify_elo(entry);
