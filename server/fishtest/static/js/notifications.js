@@ -8,6 +8,9 @@ function LRU(capacity, content) {
   if (!(content instanceof Array)) {
     throw "content is not an Array";
   }
+  if (content != [] && !(content[0] instanceof Array)) {
+    throw "content entry has the wrong type";
+  }
   return {
     capacity: capacity,
     content: content,
@@ -17,11 +20,18 @@ function LRU(capacity, content) {
     copy() {
       return new LRU(this.capacity, this.content.slice());
     },
+    toArray() {
+      let ret = [];
+      for (const elt in this.content) {
+        ret.push(elt[0]);
+      }
+      return ret;
+    },
     add(elt) {
       if (this.contains(elt)) {
         return null;
       } else {
-        this.content.push(elt);
+        this.content.push([elt, Date.now()]);
         if (this.content.length > this.capacity) {
           const drop = this.content[0];
           this.content.shift();
@@ -32,13 +42,13 @@ function LRU(capacity, content) {
       }
     },
     contains(elt) {
-      return this.content.findIndex((x) => x == elt) != -1;
+      return this.content.findIndex((x) => x[0] == elt) != -1;
     },
     save(name) {
       localStorage.setItem(name, JSON.stringify(this));
     },
     remove(elt) {
-      const idx = this.content.findIndex((x) => x == elt);
+      const idx = this.content.findIndex((x) => x[0] == elt);
       if (idx == -1) {
         return;
       } else {
@@ -53,7 +63,7 @@ LRU.load = function (name) {
   return new LRU(json["capacity"], json["content"]);
 };
 
-const fishtest_notifications_key = "fishtest_notifications";
+const fishtest_notifications_key = "fishtest_notifications_v2";
 const fishtest_timestamp_key = "fishtest_timestamp";
 
 function notify_fishtest_(message) {
