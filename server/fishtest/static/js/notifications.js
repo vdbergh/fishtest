@@ -171,17 +171,17 @@ async function main_follow_loop() {
     let json = [];
     let notifications = get_notifications();
     try {
-      if (notifications.content?.length) {
+      if (notifications.count()) {
         json = await fetch_post("/api/actions", {
           action: "finished_run",
-          run_id: { $in: notifications.content },
+          run_id: { $in: notifications.toArray() },
         });
       }
     } catch (e) {
       console.log(e);
       continue;
     }
-    notifications = get_notifications();
+    notifications = get_notifications(); // TOT HIER XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     let work = [];
     for (const entry of json) {
       let run_id = entry["run_id"];
