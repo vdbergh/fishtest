@@ -691,6 +691,7 @@ def setup_engine(
         # https://stackoverflow.com/questions/71580631/how-can-i-get-code-coverage-with-clang-13-0-1-on-mac
         make_cmd = "build" if arch == "apple-silicon" else "profile-build"
         cmd = ("make -j {} {} ARCH={} COMP={}".format(concurrency, make_cmd, arch, comp)).split()
+        print("==================================================================== Woohoo no shell make")
 
         # append -DNNUE_EMBEDDING_OFF to existing CXXFLAGS environment variable, if any
         cxx = os.environ.get("CXXFLAGS", "") + " -DNNUE_EMBEDDING_OFF"

@@ -1,8 +1,12 @@
 #!/bin/bash
 
 git clone \
-  https://github.com/official-stockfish/fishtest \
+  https://github.com/vdbergh/fishtest \
   ~/fishtest
+
+cd ~/fishtest
+git checkout make
+cd ~
 
 worker_pids=()
 
