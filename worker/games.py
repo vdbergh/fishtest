@@ -713,7 +713,7 @@ def setup_engine(
                 print("============================ Receiving Exception")
 #                errors=p.stderr.readlines()
                 send_sigint(p)
-                raise WorkerException("Executing {} failed. Error: {}".format(cmd))
+                raise FatalException("Executing {} failed. Error: {}".format(cmd))
         print("============================ After Make")
         if p.returncode:
             errors=p.stderr.readlines()
