@@ -706,9 +706,10 @@ def setup_engine(
             bufsize=1,
             close_fds=not IS_WINDOWS,
         ) as p:
-            error = []
-            for error in p.stderr:
-                errors.append(error)
+            pass
+#            error = []
+#            for error in p.stderr:
+#                errors.append(error)
         if p.returncode:
             raise WorkerException("Executing {} failed. Error: {}".format(cmd, errors))
 
