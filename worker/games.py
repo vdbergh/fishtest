@@ -710,9 +710,13 @@ def setup_engine(
                 for out in p.stdout:
                     print(out.strip())
             except Exception as e:
+                print("============================ Receiving Exception")
+                errors=p.stderr.readlines()
                 send_sigint(p)
-#            errors=p.stderr.readlines()
+                raise WorkerException("Executing {} failed. Error: {}".format(cmd, errors))
+        print("============================ After Make")
         if p.returncode:
+            errors=p.stderr.readlines()
             raise WorkerException("Executing {} failed. Error: {}".format(cmd, errors))
 
         # TODO: 'make strip' works fine with the new Makefile,
