@@ -710,11 +710,8 @@ def setup_engine(
                 for out in p.stdout:
                     print(out.strip())
             except Exception as e:
-                print("============================ Receiving Exception")
-#                errors=p.stderr.readlines()
                 send_sigint(p)
-                raise FatalException(f"Executing {cmd} raised Exception: {str(e)}", e=e)
-        print("============================ After Make")
+                raise FatalException(f"Executing {cmd} raised Exception: {e.__class__.__name__}: {str(e)}", e=e)
         if p.returncode:
             errors=p.stderr.readlines()
             raise WorkerException("Executing {} failed. Error: {}".format(cmd, errors))
