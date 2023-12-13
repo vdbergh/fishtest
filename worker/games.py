@@ -712,8 +712,8 @@ def setup_engine(
             except Exception as e:
                 send_sigint(p)
                 raise FatalException(f"Executing {cmd} raised Exception: {e.__class__.__name__}: {str(e)}", e=e)
-        if p.returncode:
             errors=p.stderr.readlines()
+        if p.returncode:
             raise WorkerException("Executing {} failed. Error: {}".format(cmd, errors))
 
         # TODO: 'make strip' works fine with the new Makefile,
