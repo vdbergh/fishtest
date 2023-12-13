@@ -707,11 +707,13 @@ def setup_engine(
             bufsize=1,
             close_fds=not IS_WINDOWS,
         ) as p:
-            pass
-#            error = []
-#            for error in p.stderr:
-#                errors.append(error)
-        print("=============================== pasct Popen make")
+            try:
+                for out in p.stdout:
+                    print(out)
+            except Exception as e:
+                print("========================================== Receiving exception")
+                send_sigint(p)
+        print("=============================== past Popen make")
         if p.returncode:
             raise WorkerException("Executing {} failed. Error: {}".format(cmd, errors))
 
