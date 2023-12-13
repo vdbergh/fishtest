@@ -711,7 +711,7 @@ def setup_engine(
                     print(out.strip())
             except Exception as e:
                 send_sigint(p)
-            errors=p.stderr.readlines()
+#            errors=p.stderr.readlines()
         if p.returncode:
             raise WorkerException("Executing {} failed. Error: {}".format(cmd, errors))
 
