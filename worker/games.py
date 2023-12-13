@@ -701,6 +701,7 @@ def setup_engine(
             cmd,
             shell=False,
             env=env,
+            stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
             bufsize=1,
