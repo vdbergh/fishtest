@@ -1,8 +1,12 @@
 #!/bin/bash
 
 git clone \
-  https://github.com/official-stockfish/fishtest \
+  https://github.com/vdbergh/fishtest \
   ~/fishtest
+
+cd ~/fishtest
+git checkout sigint
+cd ~
 
 worker_pids=()
 
@@ -29,5 +33,7 @@ for worker in $(seq 1 $NUM_WORKERS); do
   worker_pids+=($!)
   cd ~
 done
+
+ps -wejf
 
 wait
