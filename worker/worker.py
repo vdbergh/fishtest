@@ -882,7 +882,13 @@ def setup_parameters(worker_dir):
 
 
 def on_sigint(current_state, signal, frame):
-    current_state["alive"] = False
+    if not IS_WINDOWS and current_state["alive"]:  # avoid recursion
+        current_state["alive"] = False
+        pgid = os.getpgid(0)
+        os.killpg(pgid, signal)
+        return  # return to avoid race since the signal is also delivered to self
+    else:
+        current_state["alive"] = False
     raise FatalException("Terminated by signal {}".format(str_signal(signal)))
 
 
@@ -1489,6 +1495,30 @@ def fetch_and_handle_task(
     return success
 
 
+def start_worker():
+    if IS_WINDOWS:
+        return worker()
+    else:
+        child_pid = os.fork()
+
+        if child_pid == 0:  # we are the child
+            pid = os.getpid()
+            os.setpgid(0, pid)
+            return worker()
+        else:  # we are the parent
+
+            def forward_signal(child_pid, signal, frame):
+                os.killpg(child_pid, signal)
+
+            callback = partial(forward_signal, child_pid)
+
+            signal.signal(signal.SIGINT, callback)
+            signal.signal(signal.SIGTERM, callback)
+            signal.signal(signal.SIGQUIT, callback)
+            status = os.waitpid(child_pid, 0)[1]
+            return os.waitstatus_to_exitcode(status)
+
+
 def worker():
     if Path(__file__).name != "worker.py":
         print("The script must be named 'worker.py'!")
@@ -1669,4 +1699,4 @@ def worker():
 
 
 if __name__ == "__main__":
-    sys.exit(worker())
+    sys.exit(start_worker())
