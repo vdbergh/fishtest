@@ -40,8 +40,14 @@ boot_time = datetime.now(timezone.utc)
 
 
 class RunDb:
-
-    def __init__(self, db_name="fishtest_new", port=-1, is_primary_instance=True):
+    def __init__(
+        self,
+        db_name="fishtest_new",
+        port=-1,
+        threads=-1,
+        is_primary_instance=True,
+        rt_concurrency=2,
+    ):
         # MongoDB server is assumed to be on the same machine, if not user should
         # use ssh with port forwarding to access the remote host.
         self.conn = MongoClient(os.getenv("FISHTEST_HOST") or "localhost")
@@ -73,6 +79,8 @@ class RunDb:
         self.request_task_lock = threading.Lock()
         self.timer = None
         self.timer_active = True
+
+        self.__rt_concurrency = rt_concurrency
 
     def set_inactive_run(self, run):
         run_id = run["_id"]
@@ -711,7 +719,7 @@ class RunDb:
     # It is very important that the following semaphore is initialized
     # with a value strictly less than the number of Waitress threads.
 
-    task_semaphore = threading.Semaphore(2)
+    task_semaphore = threading.Semaphore(self.__rt_concurrency)
 
     task_time = 0
     task_runs = None
@@ -1553,7 +1561,9 @@ After fixing the issues you can unblock the worker at
                 {
                     "name": param["name"],
                     "value": self.spsa_param_clip(param, c * flip),
-                    "R": param["a"] / (spsa["A"] + iter_local) ** spsa["alpha"] / c**2,
+                    "R": param["a"]
+                    / (spsa["A"] + iter_local) ** spsa["alpha"]
+                    / c**2,
                     "c": c,
                     "flip": flip,
                 }

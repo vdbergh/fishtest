@@ -27,6 +27,27 @@ def thread_stack_dump(sig, frame):
             print("Failed to print traceback, the thread is probably gone", flush=True)
 
 
+def get_full_config():
+    params = {}
+    args = sys.argv
+    if len(args) <= 1:
+        raise Exception("Invocation command is too short")
+    if os.path.basename(args[0]) != "pserve":
+        raise Exception("The server is not started with pserve")
+    config = args[1]
+    for arg in args[2:]:
+        if arg[0] == "-" or "=" not in arg:
+            continue
+        arg = arg.split("=")
+        params[arg[0].strip()] = arg[1].strip()
+    c = configparser.ConfigParser(defaults=params)
+    try:
+        c.read(config)
+    except:
+        raise Exception("Unable to parse the config file")
+    return c
+
+
 def main(global_config, **settings):
     """This function returns a Pyramid WSGI application."""
 
@@ -59,13 +80,35 @@ def main(global_config, **settings):
         for j in static_full_path(i).glob(f"*.{i}")
     }
 
-    port = int(settings.get("fishtest.port", -1))
-    primary_port = int(settings.get("fishtest.primary_port", -1))
+    is_primary_instance = True
+    threads = -1
+    port = -1
+    primary_port = -1
+    rt_concurrency = -1
+    try:
+        full_config = get_full_config()
+        port = int(full_config["server:main"]["port"])
+        threads = int(full_config["server:main"]["threads"])
+        primary_port = int(full_config["app:main"]["fishtest.primary_port"])
+        rt_concurrency = int(full_config["app:main"]["fishtest.rt_concurrency"])
+    except Exception as e:
+        print(f"Errors parsing the config file: {str(e)}")
+
+    if rt_concurrency >= threads >= 0:
+        raise Exception(
+            "rt_concurrency must be strictly less than the number "
+            "of waitress threads"
+        )
+
     # If the port number cannot be determined like during unit tests or CI,
     # assume the instance is primary for backward compatibility.
     is_primary_instance = port == primary_port
 
-    rundb = RunDb(port=port, is_primary_instance=is_primary_instance)
+    rundb = RunDb(
+        port=port,
+        is_primary_instance=is_primary_instance,
+        rt_concurrency=rt_concurrency,
+    )
 
     def add_rundb(event):
         event.request.rundb = rundb
