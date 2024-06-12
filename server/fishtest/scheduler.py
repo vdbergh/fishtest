@@ -1,6 +1,9 @@
 import copy
 import threading
+<<<<<<< HEAD
 import traceback
+=======
+>>>>>>> f042b76 (Replace print by the Python logging framework)
 from datetime import datetime, timedelta, timezone
 from random import uniform
 
