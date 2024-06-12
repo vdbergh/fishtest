@@ -1,6 +1,7 @@
 import copy
 import hashlib
 import html
+import logging
 import os
 import re
 import threading
@@ -29,6 +30,8 @@ from pyramid.security import forget, remember
 from pyramid.view import forbidden_view_config, notfound_view_config, view_config
 from requests.exceptions import ConnectionError, HTTPError
 from vtjson import ValidationError, union, validate
+
+logger = logging.getLogger(__name__)
 
 HTTP_TIMEOUT = 15.0
 
@@ -279,7 +282,7 @@ def upload(request):
         )
         return {}
     except Exception as e:
-        print("Error reading the network file:", e)
+        logger.info(f"Error reading the network file: {str(e)}")
         request.session.flash("Error reading the network file", "error")
         return {}
     if request.rundb.get_nn(filename):
@@ -303,7 +306,7 @@ def upload(request):
         with open(os.path.expanduser("~/fishtest.upload"), "r") as f:
             upload_server = f.read().strip()
     except Exception as e:
-        print("Network upload not configured:", e)
+        logger.info(f"Network upload not configured: {str(e)}")
         request.session.flash("Network upload not configured", "error")
         return {}
     try:
@@ -312,10 +315,10 @@ def upload(request):
         response = requests.post(upload_server, files=files, timeout=HTTP_TIMEOUT * 20)
         response.raise_for_status()
     except ConnectionError as e:
-        print("Failed to connect to the net server:", e)
+        logger.info(f"Failed to connect to the net server: {str(e)}")
         error = "Failed to connect to the net server"
     except HTTPError as e:
-        print("Network upload failed:", e)
+        logger.info("Network upload failed: {str(e)}")
         if response.status_code == 409:
             error = "Post request failed: network {} already uploaded".format(filename)
         elif response.status_code == 500:
@@ -325,7 +328,7 @@ def upload(request):
         else:
             error = "Post request failed: other HTTP error"
     except Exception as e:
-        print("Error during connection:", e)
+        logger.info(f"Error during connection: {str(e)}")
         error = "Post request for the network upload failed"
 
     if error:
@@ -410,7 +413,7 @@ def signup(request):
             ).json()
             if "success" not in response or not response["success"]:
                 if "error-codes" in response:
-                    print(response["error-codes"])
+                    logger.info(response["error-codes"])
                 request.session.flash("Captcha failed", "error")
                 return {}
 
@@ -716,7 +719,7 @@ def get_master_info(url):
         response = requests.get(url)
         response.raise_for_status()
     except Exception as e:
-        print(f"Exception getting commits:\n{e}")
+        logger.info(f"Exception getting commits:\n{str(e)}")
         return None
 
     bench_search = re.compile(r"(^|\s)[Bb]ench[ :]+([1-9]\d{5,7})(?!\d)")
@@ -1394,12 +1397,10 @@ def tests_delete(request):
             validate(runs_schema, run, "run")
         except ValidationError as e:
             message = f"The run object {run_id} does not validate: {str(e)}"
-            print(message, flush=True)
             if "version" in run and run["version"] >= RUN_VERSION:
-                self.actiondb.log_message(
-                    username="fishtest.system",
-                    message=message,
-                )
+                logger.error(message)
+            else:
+                logger.info(message)
         request.rundb.buffer(run, True)
 
         request.actiondb.delete_run(
@@ -1747,7 +1748,7 @@ def tests(request):
             try:
                 last_tests = homepage_results(request)
             except Exception as e:
-                print("Overview exception: " + str(e))
+                logger.info(f"Overview exception: {str(e)}")
                 if not last_tests:
                     raise e
             finally:

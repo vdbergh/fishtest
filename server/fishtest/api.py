@@ -1,6 +1,7 @@
 import base64
 import copy
 import io
+import logging
 import re
 from datetime import datetime, timezone
 from urllib.parse import urlparse
@@ -18,6 +19,8 @@ from pyramid.httpexceptions import (
 from pyramid.response import FileIter, Response
 from pyramid.view import exception_view_config, view_config, view_defaults
 from vtjson import ValidationError, validate
+
+logger = logging.getLogger(__name__)
 
 """
 Important note
@@ -69,7 +72,7 @@ class GenericApi:
             )
             api = urlparse(full_url).path
             error = f"{api}: {error}"
-            print(error, flush=True)
+            logger.info(error)
             raise exception(self.add_time({"error": error}))
 
 

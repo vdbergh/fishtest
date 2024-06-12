@@ -1,3 +1,4 @@
+import logging
 import sys
 import threading
 import time
@@ -7,6 +8,9 @@ from fishtest.schemas import user_schema
 from pymongo import ASCENDING
 from vtjson import ValidationError, validate
 
+logger = logging.getLogger("__name__")
+
+
 DEFAULT_MACHINE_LIMIT = 16
 
 
@@ -15,7 +19,7 @@ def validate_user(user):
         validate(user_schema, user, "user")
     except ValidationError as e:
         message = f"The user object does not validate: {str(e)}"
-        print(message, flush=True)
+        logger.info(message)
         raise Exception(message)
 
 
@@ -145,9 +149,8 @@ class UserDb:
             self.last_pending_time = 0
             self.clear_cache()
             # logs rejected users to the server
-            print(
-                f"user: {user['username']} with email: {user['email']} was rejected by: {rejector}",
-                flush=True,
+            logger.info(
+                f"user: {user['username']} with email: {user['email']} was rejected by: {rejector}"
             )
             return True
         else:
