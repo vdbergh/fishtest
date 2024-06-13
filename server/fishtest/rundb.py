@@ -261,6 +261,15 @@ class RunDb:
             stats = task["stats"]
             run["committed_games"] -= stats["wins"] + stats["losses"] + stats["draws"]
 
+            # Update run["results"]...
+            results = run["results"]
+            for k, v in task["stats"]:
+                if k != "pentanomial":
+                    results[k] -= v
+                else:
+                    for i, vv in enumerate(v):
+                        results[k][i] -= vv
+
             # Rather than removing the task, we mark
             # it as bad.
             # In this way the numbering of tasks
@@ -1534,27 +1543,12 @@ After fixing the issues you can unblock the worker at
         if run.get("failed", False):
             return "You cannot purge a failed run"
         message = "No bad workers"
-        # Transfer bad tasks to run["bad_tasks"]
-        if "bad_tasks" not in run:
-            run["bad_tasks"] = []
 
-        tasks = copy.copy(run["tasks"])
-        zero_stats = {
-            "wins": 0,
-            "losses": 0,
-            "draws": 0,
-            "crashes": 0,
-            "time_losses": 0,
-            "pentanomial": 5 * [0],
-        }
-
-        for task_id, task in enumerate(tasks):
-            if "bad" in task:
-                continue
+        for task_id, task in enumerate(run["tasks"]):
             # Special cases: crashes or time losses.
             if crash_or_time(task):
                 message = ""
-                # The residual or residual color my not have been set yet
+                # The residual or residual color may not have been set yet
                 self.set_bad_task(task_id, run, residual=10.0, residual_color="#FF6A6A")
 
         chi2 = get_chi2(run["tasks"])
@@ -1569,17 +1563,22 @@ After fixing the issues you can unblock the worker at
             res=res,
             iters=iters - 1 if message == "" else iters,
         )
-        tasks = copy.copy(run["tasks"])
-        for task_id, task in enumerate(tasks):
-            if "bad" in task:
-                continue
+        for task_id, task in enumerate(run["tasks"]):
             if task["worker_info"]["unique_key"] in bad_workers:
                 message = ""
                 self.set_bad_task(task_id, run)
 
-        if message == "":
+        try:
+            validate(runs_schema, run)
+        except ValidationError as e:
+            log_message = f"Purged run {str(run['_id'])} does not validate: {str(e)}"
+            logger.error(log_message)
+            # Remedial action to save the run
             results = compute_results(run)
             run["results"] = results
+
+        if message == "":
+            # We have purged some tasks. See if the run is now live again...
             revived = True
             if "sprt" in run["args"] and "state" in run["args"]["sprt"]:
                 fishtest.stats.stat_util.update_SPRT(results, run["args"]["sprt"])
@@ -1594,6 +1593,7 @@ After fixing the issues you can unblock the worker at
                 style = run["results_info"]["style"]
                 run["is_green"] = style == "#44EB44"
                 run["is_yellow"] = style == "yellow"
+
             self.buffer(run, True)
         return message
 
