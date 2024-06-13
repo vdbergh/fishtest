@@ -263,7 +263,7 @@ class RunDb:
 
             # Update run["results"]...
             results = run["results"]
-            for k, v in task["stats"]:
+            for k, v in task["stats"].items():
                 if k != "pentanomial":
                     results[k] -= v
                 else:
@@ -1531,13 +1531,21 @@ After fixing the issues you can unblock the worker at
         else:
             return None, f"Run {str(run_id)} already approved!"
 
-    def purge_run(self, run, p=0.001, res=7.0, iters=1):
+    def purge_run(self, run, p=0.001, res=7.0, iters=1, test=False):
+        # Test mode
+        if test:
+            p = 1.0
+            res = 0
+            iters = 1
+
         # Only purge finished runs
         if not run["finished"]:
             return "Can only purge completed run"
 
         now = datetime.now(timezone.utc)
-        if "start_time" not in run or (now - run["start_time"]).days > 30:
+        if not test and (
+            "start_time" not in run or (now - run["start_time"]).days > 30
+        ):
             return "Run too old to be purged"
         # Do not revive failed runs
         if run.get("failed", False):
@@ -1580,6 +1588,7 @@ After fixing the issues you can unblock the worker at
         if message == "":
             # We have purged some tasks. See if the run is now live again...
             revived = True
+            results = run["results"]
             if "sprt" in run["args"] and "state" in run["args"]["sprt"]:
                 fishtest.stats.stat_util.update_SPRT(results, run["args"]["sprt"])
                 if run["args"]["sprt"]["state"] != "":
