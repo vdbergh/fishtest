@@ -129,7 +129,7 @@ class WorkerApi(GenericApi):
             run = self.request.rundb.get_run(run_id, db=False)
             if run is None:
                 self.handle_error("Invalid run_id: {}".format(run_id))
-            self.__run = run
+#            self.__run = run
 
         # if a task_id is present then the unique_key, username and remote_addr
         # should be correct
@@ -157,16 +157,18 @@ class WorkerApi(GenericApi):
                         f"{value_task}. From request: {value_request}."
                     )
 
-            self.__task = task
+ #           self.__task = task
 
     def get_username(self):
         return self.request_body["worker_info"]["username"]
 
     def run(self):
-        if self.__run is not None:
-            return self.__run
-
-        self.handle_error("Missing run_id")
+        if self.__run is None:
+            run_id = self.run_id()
+            self.__run = self.request.rundb.get_run(run_id, db=False)
+            if self.__run is None:
+                self.handle_error(f"Unable to access run {run_id}")            
+        return self.__run
 
     def run_id(self):
         if "run_id" in self.request_body:
@@ -175,8 +177,12 @@ class WorkerApi(GenericApi):
         self.handle_error("Missing run_id")
 
     def task(self):
-        if self.__task is not None:
-            return self.__task
+        if self.__task is None:
+            task_id = self.task_id()
+            run = self.run()
+            self.__task = run["tasks"][task_id]
+            
+        return self.__task
 
         self.handle_error("Missing task_id")
 
