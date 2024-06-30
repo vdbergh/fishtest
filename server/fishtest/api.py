@@ -123,13 +123,18 @@ class WorkerApi(GenericApi):
         except ValidationError as e:
             self.handle_error(str(e))
 
-        # is a supplied run_id correct?
+        # Get run_id, task_id and validate them
         if "run_id" in self.request_body:
             run_id = self.request_body["run_id"]
-            run = self.request.rundb.get_run(run_id, db=False)
-            if run is None:
-                self.handle_error("Invalid run_id: {}".format(run_id))
-#            self.__run = run
+            task_id = None
+            if "task_id" in self.request_body:
+                task_id = self.request_body["task_id"]
+            # THIS FUNCTION MUST BE IMPLEMENTED
+            if not self.request.rundb.validate_rid_tid(run_id=run_id, task_id=task_id):
+                if task_id is not None:
+                    self.handle_error(f"Invalid run_id/task_id: {run_id}/{task_id}")
+                else:
+                    self.handle_error(f"Invalid run_id: {run_id}")
 
         # if a task_id is present then the unique_key, username and remote_addr
         # should be correct
@@ -157,7 +162,7 @@ class WorkerApi(GenericApi):
                         f"{value_task}. From request: {value_request}."
                     )
 
- #           self.__task = task
+           self.__task = task
 
     def get_username(self):
         return self.request_body["worker_info"]["username"]
