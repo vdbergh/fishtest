@@ -1168,10 +1168,13 @@ def verify_toolchain():
         cmd_str = " ".join(cmd)
         ret = True
         try:
-            p = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except (OSError, subprocess.SubprocessError) as e:
             print(f"'{cmd_str}' raised Exception: {type(e).__name__}: {e}")
             ret = False
+        if ret:
+            print(name, p.stdout)
+            print(name, p.stderr)
         if ret and p.returncode != 0:
             print(
                 f"Executing '{cmd_str}' failed with return code "
