@@ -1159,6 +1159,11 @@ def verify_toolchain():
     if IS_MACOS:
         # MacOSX apears not to have a method to detect strip
         cmds["strip"] = ["which", "strip"]
+    if IS_WINDOWS:
+        cmds["powershell"] = (
+            "powershell (Get-CimInstance Win32_OperatingSystem)"
+            ".TotalVisibleMemorySize"
+        ).split()
     for name, cmd in cmds.items():
         cmd_str = " ".join(cmd)
         ret = True
@@ -1489,6 +1494,10 @@ def worker():
         # Linux does not have SIGBREAK.
         pass
 
+    # Check for common tool chain issues
+    if not verify_toolchain():
+        return 1
+
     # Handle command line parameters and the config file.
     options = setup_parameters(worker_dir)
 
@@ -1510,10 +1519,6 @@ def worker():
             return 1
     except Exception as e:
         print("Exception verifying worker version:\n", e, sep="", file=sys.stderr)
-        return 1
-
-    # Check for common tool chain issues
-    if not verify_toolchain():
         return 1
 
     # Make sure we have a working cutechess-cli
