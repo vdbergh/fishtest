@@ -141,6 +141,22 @@ def is_master(sha):
         return False
 
 
+def get_master_repo(user="official-stockfish", repo="Stockfish"):
+    api_url = f"https://api.github.com/repos/{user}/{repo}"
+    r = call(api_url, timeout=TIMEOUT)
+    r.raise_for_status()
+    r = r.json()
+    while True:
+        if "fork" not in r:
+            return None
+        if not r["fork"]:
+            return r.get("html_url", None)
+        else:
+            if "parent" not in r:
+                return None
+            r = r["parent"]
+
+
 def compare_branches_url(
     user1="stockfish-chess", branch1="master", user2=None, branch2=None
 ):
