@@ -60,18 +60,24 @@
       <table id = "checklist-table" class="table table-striped table-sm">
         <thead></thead>
         <tbody>
-	  <tr>
-	    <td>Branch is rebased and squashed</td><td> <span id="rebased-and-squashed"></span></td>
-	  </tr>
-	  <tr>
-	    <td>The commit message is equal to the PR message</td><td><span id="commit-is-pr"></span></td>
-	  </tr>
+          <tr>
+            <td>Branch is rebased and squashed</td><td> <span id="rebased-and-squashed"></span></td>
+          </tr>
+          <tr>
+            <td>The commit message is equal to the PR message</td><td><span id="commit-is-pr"></span></td>
+          </tr>
         </tbody>
       </table>
     </div>
     <h5>Latest commit message</h5>
-    <code id="commit-message">
-    </code>
+    <div class="mb-3">
+      <code id="commit-message">
+      </code>
+    </div>
+    <button
+      id="fixup-commit"
+      class="btn btn-primary"
+      >Add fixup commit</button>
   </div>
   <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="branch-tab">
     <form class="pt-4">
@@ -133,6 +139,7 @@
       const srcBranch = document.getElementById("src-branch");
       const dstUser = document.getElementById("dst-user");
       const dstRepo = document.getElementById("dst-repo");
+      const fixupCommitBtn = document.getElementById("fixup-commit");
 
       srcUser.placeholder = pullRequestDevUser + " (obtained from profile)";
       srcRepo.placeholder = pullRequestDevRepo + " (obtained from profile)";
@@ -175,8 +182,12 @@
         pullRequestTab.innerHTML = 'Pull request';
       }
 
-      async function updateBranchTab() {
+      async function updateBranchTab(useCache) {
+	if (useCache === undefined) {
+          useCache = true;
+        }
         branchTab.innerHTML = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Branch';
+	fixupCommitBtn.disabled = false;
         checklistTable.hidden = false;
         let branchClean = true;
         try {
@@ -188,8 +199,8 @@
             throw new Error(message);
           }
           branchName.innerHTML = await PR.branchLink();
-          const commit = await PR.getCommit(token);
-          commitMessage.innerHTML = commit.commit.message;
+          const commit = await PR.getCommit(token, useCache);
+          commitMessage.innerHTML = commit.commit.message + "\n";
           const branchIsRebasedAndSquashed = await PR.branchIsRebasedAndSquashed(token);
           if (branchIsRebasedAndSquashed) {
             branchIsRebasedAndSquashedField.innerHTML = "&check;";
@@ -201,11 +212,12 @@
           }
 
           const message = normalizeText(commit.commit.message);
-          const prText_ = normalizeText(await prText());
+          const prText_ = normalizeText(await PR.prMessage());
           const commitIsPR = prText_ === message;
           if (commitIsPR) {
             commitIsPRField.innerHTML = "&check;";
             commitIsPRField.style.color = "green";
+	    fixupCommitBtn.disabled = true;
           } else {
             commitIsPRField.innerHTML = "&cross;";
             commitIsPRField.style.color = "red";
@@ -261,11 +273,9 @@
         updatePullRequestIcon();
       });
 
-      async function prText() {
-         return normalizeText(htmlToText(await PR.renderTitle())+"\n\n"+ htmlToText(await PR.renderBody()));
-      }
+
       copyBtn.addEventListener("click", async () => {
-        navigator.clipboard.writeText(await prText());
+        navigator.clipboard.writeText(await PR.prMessage());
         alertMessage("Copied to clipboard!");
       });
 
@@ -327,6 +337,18 @@
         const number = await PR.getNumber();
         if(number) {
           window.open((await PR.prLink(number)), "github");
+	}
+      });
+
+      fixupCommitBtn.addEventListener("click", async () => {
+        try {
+          await validateToken(token);
+          await PR.addFixupCommit(token);
+	  await updateBranchTab(false); // no cache
+	} catch(e) {
+          console.error(e);
+          const error = await processError(e);
+          alertError(error);
 	}
       });
 

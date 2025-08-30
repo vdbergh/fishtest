@@ -25,6 +25,7 @@ async function getOAutScopesAPI(token, timeout) {
   const options = {
     method: "GET",
     signal: abortTimeout(timeout),
+    cache: "no-store",
     headers: {
       Accept: "application/vnd.github+json",
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -55,6 +56,7 @@ async function renderMarkDownAPI(text, dstUser, dstRepo, token, timeout) {
   const options = {
     method: "POST",
     signal: abortTimeout(timeout),
+    cache: "no-store",
     headers: {
       Accept: "application/vnd.github+json",
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -77,6 +79,7 @@ async function renderMarkDownRawAPI(text, token, timeout) {
   const options = {
     method: "POST",
     signal: abortTimeout(timeout),
+    cache: "no-store",
     headers: {
       Accept: "text/html",
       "Content-Type": "text/plain",
@@ -88,6 +91,70 @@ async function renderMarkDownRawAPI(text, token, timeout) {
   return await fetchText(url, options);
 }
 
+async function addCommitAPI(
+  user,
+  repo,
+  parentSha,
+  treeSha,
+  message,
+  token,
+  timeout,
+) {
+  if (!timeout) {
+    timeout = apiTimeout;
+  }
+  const url = `https://api.github.com/repos/${user}/${repo}/git/commits`;
+  const payload = {
+    message: message,
+    parents: [parentSha],
+    tree: treeSha,
+  };
+  const options = {
+    method: "POST",
+    signal: abortTimeout(timeout),
+    cache: "no-store",
+    headers: {
+      Accept: "application/vnd.github+json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify(payload),
+  };
+
+  console.log(`addCommitAPI (${url}): ${JSON.stringify(options)}`);
+  return fetchJson(url, options);
+}
+
+async function updateBranchWithNewCommitAPI(
+  user,
+  repo,
+  branch,
+  newCommitSha,
+  token,
+  timeout,
+) {
+  if (!timeout) {
+    timeout = apiTimeout;
+  }
+  const url = `https://api.github.com/repos/${user}/${repo}/git/refs/heads/${branch}`;
+  const payload = {
+    sha: newCommitSha,
+  };
+  const options = {
+    method: "PATCH",
+    signal: abortTimeout(timeout),
+    cache: "no-store",
+    headers: {
+      Accept: "application/vnd.github+json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify(payload),
+  };
+  console.log(
+    `updateBranchWithNewCommitAPI (${url}): ` + JSON.stringify(options),
+  );
+  return fetchJson(url, options);
+}
+
 async function getCommitAPI(user, repo, branch, token, timeout) {
   if (!timeout) {
     timeout = apiTimeout;
@@ -96,15 +163,14 @@ async function getCommitAPI(user, repo, branch, token, timeout) {
   const options = {
     method: "GET",
     signal: abortTimeout(timeout),
+    cache: "no-store",
     headers: {
       Accept: "application/vnd.github+json",
       ...(token && { Authorization: `Bearer ${token}` }),
     },
   };
   console.log(`getCommitAPI (${url}): ` + JSON.stringify(options));
-
-  const json = await fetchJson(url, options);
-  return json;
+  return fetchJson(url, options);
 }
 
 async function getCommitsAPI(user, repo, branch, number, token, timeout) {
@@ -115,6 +181,7 @@ async function getCommitsAPI(user, repo, branch, number, token, timeout) {
   const options = {
     method: "GET",
     signal: abortTimeout(timeout),
+    cache: "no-store",
     headers: {
       Accept: "application/vnd.github+json",
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -160,6 +227,8 @@ async function submitPullRequestAPI(options) {
   const options_ = {
     method: "POST",
     signal: abortTimeout(options.timeout),
+
+    cache: "no-store",
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${options.token}`,
@@ -187,6 +256,7 @@ async function updatePullRequestAPI(options) {
   const options_ = {
     method: "PATCH",
     signal: abortTimeout(options.timeout),
+    cache: "no-store",
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${options.token}`,
@@ -206,6 +276,7 @@ async function getPullRequestByNumberAPI(options) {
   const options_ = {
     method: "GET",
     signal: abortTimeout(options.timeout),
+    cache: "no-store",
     headers: {
       Accept: "application/vnd.github+json",
       ...(options.token && { Authorization: `Bearer ${options.token}` }),
@@ -228,6 +299,7 @@ async function getPullRequestByRefAPI(options) {
   const options_ = {
     method: "GET",
     signal: abortTimeout(options.timeout),
+    cache: "no-store",
     headers: {
       Accept: "application/vnd.github+json",
       ...(options.token && { Authorization: `Bearer ${options.token}` }),
@@ -271,7 +343,7 @@ async function handlePullRequest(options) {
 async function validateToken(token, timeout) {
   const noTokenMessage = `You have to install a <a href=https://github.com/settings/tokens>
                           classic GitHub personal access token</a> with <strong>repo scope</strong>
-                          in your <a href=/user>profile</a>`;
+                          and <strong>user scope</strong> in your <a href=/user>profile</a>`;
 
   if (!timeout) {
     timeout = apiTimeout;
@@ -287,6 +359,11 @@ async function validateToken(token, timeout) {
     if (scopes.indexOf("repo") == -1) {
       throw new Error(
         "Your token does not have repo scope<br>" + noTokenMessage,
+      );
+    }
+    if (scopes.indexOf("user") == -1) {
+      throw new Error(
+        "Your token does not have user scope<br>" + noTokenMessage,
       );
     }
   } else {
@@ -563,10 +640,21 @@ class PullRequest {
     };
   }
 
-  async getCommit(token) {
+  async prMessage() {
+    return normalizeText(
+      htmlToText(await this.renderTitle()) +
+        "\n\n" +
+        htmlToText(await this.renderBody()),
+    );
+  }
+
+  async getCommit(token, useCache) {
+    if (useCache === undefined) {
+      useCache = true;
+    }
     const userData = await this.getUserData();
     let commit;
-    if (this.commitCache[userData.userBranchKey]) {
+    if (useCache && this.commitCache[userData.userBranchKey]) {
       commit = this.commitCache[userData.userBranchKey];
     } else {
       commit = await getCommitAPI(
@@ -579,6 +667,31 @@ class PullRequest {
       this.commitCache[userData.userBranchKey] = commit;
     }
     return commit;
+  }
+
+  async addFixupCommit(token) {
+    const userData = await this.getUserData();
+    const commit = await this.getCommit(token);
+    const tree_sha = commit.commit.tree.sha;
+    const parent_sha = commit.sha;
+    const message = await this.prMessage();
+    const newCommit = await addCommitAPI(
+      userData.user,
+      userData.repo,
+      parent_sha,
+      tree_sha,
+      message,
+      token,
+      this.timeout,
+    );
+    await updateBranchWithNewCommitAPI(
+      userData.user,
+      userData.repo,
+      userData.branch,
+      newCommit.sha,
+      token,
+      this.timeout,
+    );
   }
 
   async branchLink() {
@@ -606,9 +719,6 @@ class PullRequest {
     const master = await this.getMaster(token);
     const head = await this.getCommit(token);
     const headParents = head.parents;
-    if (headParents.length != 1) {
-      return false;
-    }
     const masterSha = master.sha;
     const headParentsSha = headParents[0].sha;
     return masterSha === headParentsSha;
@@ -682,10 +792,10 @@ class PullRequest {
   }
 
   async renderBody(token) {
-    const userData = this.getUserData();
     if (this.renderedBodyCache) {
       return this.renderedBodyCache;
     }
+    const userData = await this.getUserData();
     const text = await this.renderBodyText(token);
     const markDown = await renderMarkDownAPI(
       text,
