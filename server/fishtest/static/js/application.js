@@ -691,13 +691,14 @@ function isClassicPAT(token) {
   return token.match(pattern) != null;
 }
 
-// Inserts a blank line after every paragraph.
-// Note that innerHTML removes tags but not text even if it is white
-// space.
-
 function htmlToText(html) {
-  const html2 = html.replace(/<\/p[\s]*>/g, "</p>\n\n");
-  const temp = document.createElement("div");
-  temp.innerHTML = html2;
-  return temp.innerText;
+  const htmlViewer = document.createElement("div");
+  // FF can use overflow:hidden but Safari on iPad does not render it
+  htmlViewer.textCSS =
+    "height:0;position:fixed;top:0;font-size:xx-small;opacity:0;";
+  document.body.prepend(htmlViewer);
+  htmlViewer.innerHTML = html;
+  const text = htmlViewer.innerText;
+  htmlViewer.remove();
+  return text;
 }

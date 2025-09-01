@@ -3,7 +3,6 @@
 <script>
   document.title = "Pull Request | Stockfish Testing";
 </script>
-
 <h2>Pull Request</h2>
 <br>
 <ul class="nav nav-tabs" id="myTab" role="tablist">
