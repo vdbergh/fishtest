@@ -676,15 +676,22 @@ class PullRequest {
     const tree_sha = commit.commit.tree.sha;
     const parent_sha = commit.sha;
     const message = await this.prMessage();
-    const newCommit = await addCommitAPI(
-      userData.user,
-      userData.repo,
-      parent_sha,
-      tree_sha,
-      message,
-      token,
-      this.timeout,
-    );
+    try {
+      const newCommit = await addCommitAPI(
+        userData.user,
+        userData.repo,
+        parent_sha,
+        tree_sha,
+        message,
+        token,
+        this.timeout,
+      );
+    } catch (e) {
+      throw new Error(
+        "Unable to add new commit (perhaps the token doesn't have write access to the branch?)",
+        { cause: e },
+      );
+    }
     await updateBranchWithNewCommitAPI(
       userData.user,
       userData.repo,
@@ -853,7 +860,14 @@ class PullRequest {
     if (this.numberCache[userData.userBranchKey]) {
       options.number = this.numberCache[userData.userBranchKey];
     }
-    const number = await handlePullRequest(options);
+    try {
+      const number = await handlePullRequest(options);
+    } catch (e) {
+      throw new Error(
+        "Unable to submit pull request (perhaps the token doesn't give write access to the source repository?)",
+        { cause: e },
+      );
+    }
     this.numberCache[userData.userBranchKey] = number;
     return number;
   }

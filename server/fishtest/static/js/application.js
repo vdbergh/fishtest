@@ -168,6 +168,9 @@ function log(message, trace) {
 }
 
 async function processError(e) {
+  if (!(e instanceof Error)) {
+    return String(e);
+  }
   let text = e.message;
   if (e instanceof HTTPError) {
     const response = e.response;
@@ -206,6 +209,8 @@ async function processError(e) {
                  target='_blank'>GitHub personal access token</a> to your <a href='/user'>profile</a>
                  or else use 'View on GitHub'.`;
     }
+  } else if (e.cause) {
+    text += `<br>This error is caused by:<br>${await processError(e.cause)}`;
   }
   return text;
 }
