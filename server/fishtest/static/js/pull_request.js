@@ -671,7 +671,8 @@ class PullRequest {
 
   async addFixupCommit(token) {
     const userData = await this.getUserData();
-    const commit = await this.getCommit(token);
+    // Skip cache to make sure we have the latest head
+    const commit = await this.getCommit(token, false);
     const tree_sha = commit.commit.tree.sha;
     const parent_sha = commit.sha;
     const message = await this.prMessage();
