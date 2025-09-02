@@ -28,7 +28,7 @@
   <p>
     If you are frequently hitting the client rate limit then it is recommended to
     install a
-    <a href="https://github.com/settings/personal-access-tokens" target="_blank">
+    <a href="https://github.com/settings/personal-access-tokens" target="github">
     GitHub personal access token
     </a>
     in your

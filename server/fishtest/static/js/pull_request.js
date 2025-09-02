@@ -480,7 +480,7 @@ async function handlePullRequest(options) {
 }
 
 async function validateToken(token, timeout) {
-  const noTokenMessage = `You have to install a <a href=https://github.com/settings/tokens>
+  const noTokenMessage = `You have to install a <a href=https://github.com/settings/tokens target=github>
                           classic GitHub personal access token</a> with <strong>repo scope</strong>
                           and <strong>user scope</strong> in your <a href=/user>profile</a>`;
 

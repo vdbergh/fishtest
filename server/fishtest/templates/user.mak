@@ -202,7 +202,7 @@
               <!-- Instructions on how to obtain the token -->
               <h4>Instructions for generating a new token:</h4>
               <ol>
-                <li>Go to <a href="https://github.com/settings/tokens" target="_blank">Github</a> (login if required).</li>
+                <li>Go to <a href="https://github.com/settings/tokens" target="github">Github</a> (login if required).</li>
                 <li>Press "Generate a new token (classic)".</li>
                 <li>Fill in the  "Note" field.</li>
                 <li>Set your preferred expiration time.</li>
@@ -211,7 +211,7 @@
                 <li>Copy the token and paste it into this input field. Remember that for security reasons GitHub will show the token only once.</li>
               </ol>
               <p> Note: if you only want to increase the rate limit you may also use a
-              <a href=https://github.com/settings/personal-access-tokens>fine grained personal access token</a> with read-only access to public repositories.
+              <a href=https://github.com/settings/personal-access-tokens target="github">fine grained personal access token</a> with read-only access to public repositories.
               </p>
             </div>
           </div>

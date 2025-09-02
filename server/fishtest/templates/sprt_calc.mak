@@ -130,7 +130,7 @@
     </li>
     <li>
       The original version of this web page was written by
-      <a href="https://github.com/hwiechers">Henri Wiechers</a>.
+      <a href="https://github.com/hwiechers" target="_blank">Henri Wiechers</a>.
     </li>
   </ul>
 </div>
