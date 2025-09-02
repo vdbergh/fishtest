@@ -169,7 +169,7 @@
           renderedPR.innerHTML = await PR.renderBody(token);
           renderedTitle.innerHTML= await PR.renderTitle(token);
           const number = await PR.getNumber(token);
-          if(number){
+          if(number != -1){
             submitBtn.textContent="Update PR";
             openGitHubBtn.hidden = false;
           } else {
@@ -344,7 +344,7 @@
 
       openGitHubBtn.addEventListener("click", async () => {
         const number = await PR.getNumber();
-        if(number) {
+        if(number != -1) {
           window.open((await PR.prLink(number)), "github");
 	}
       });

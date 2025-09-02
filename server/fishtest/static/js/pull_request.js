@@ -1064,10 +1064,6 @@ class PullRequest {
   }
 
   async getNumber(token) {
-    const runs = await this.getRuns();
-    if (runs.length === 0) {
-      return false;
-    }
     const userData = await this.getUserData();
     if (this.numberCache[userData.userBranchKey]) {
       return this.numberCache[userData.userBranchKey];
@@ -1084,8 +1080,10 @@ class PullRequest {
     const PR = await getPullRequestByRefAPI(options);
     if (PR) {
       this.numberCache[userData.userBranchKey] = PR.number;
+    } else {
+      this.numberCache[userData.userBranchKey] = -1;
     }
-    return PR ? PR.number : null;
+    return this.numberCache[userData.userBranchKey];
   }
 
   async submit(token) {
@@ -1104,7 +1102,7 @@ class PullRequest {
     body = await this.renderBodyText(token);
     options.title = await this.renderTitle(token);
     options.body = body;
-    if (this.numberCache[userData.userBranchKey]) {
+    if (this.numberCache[userData.userBranchKey] != -1) {
       options.number = this.numberCache[userData.userBranchKey];
     }
     let number;
