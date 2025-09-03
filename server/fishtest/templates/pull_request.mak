@@ -46,9 +46,13 @@
       class="btn btn-primary"
       >Create PR</button>
     <button
+      id="get-from-github"
+      class="btn btn-primary"
+      >Load PR from GitHub</button>
+    <button
       id="copy"
       class="btn btn-primary"
-      >Copy</button>
+      >Copy to clipboard</button>
     <button id="open-github" class="btn btn-secondary" hidden>Open GitHub</button>
   </div>
   <div class="tab-pane fade" id="branch" role="tabpanel" aria-labelledby="branch-tab">
@@ -125,6 +129,7 @@
       const renderedPR = document.getElementById("rendered-pr");
       const renderedTitle = document.getElementById("rendered-title");
       const submitBtn = document.getElementById("submit");
+      const getFromGitHubBtn = document.getElementById("get-from-github");
       const copyBtn = document.getElementById("copy");
       const openGitHubBtn = document.getElementById("open-github");
 
@@ -163,6 +168,11 @@
       dstUser.value=PR.dstUser;
       dstRepo.value=PR.dstRepo;
 
+      function updateEditTab() {
+        titleElt.value = PR.title;
+        bodyElt.value = PR.body;
+      }
+
       async function updatePullRequestTab() {
         pullRequestTab.innerHTML = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Pull request';
         try {
@@ -170,7 +180,7 @@
           renderedTitle.innerHTML= await PR.renderTitle(token);
           const number = await PR.getNumber(token);
           if(number != -1){
-            submitBtn.textContent="Update PR";
+            submitBtn.textContent="Update PR on GitHub";
             openGitHubBtn.hidden = false;
           } else {
             submitBtn.textContent="Create PR";
@@ -241,12 +251,16 @@
         return branchClean;
       }
 
-      branchTab.addEventListener("shown.bs.tab", async () => {
-	  await updateBranchTab();
+      editTab.addEventListener("shown.bs.tab", async () => {
+	  await updateEditTab();
       });
 
       pullRequestTab.addEventListener("shown.bs.tab", async () => {
 	  await updatePullRequestTab();
+      });
+
+      branchTab.addEventListener("shown.bs.tab", async () => {
+	  await updateBranchTab();
       });
 
       actOnInput([titleElt, bodyElt, srcUser, srcRepo, srcBranch, dstUser, dstRepo], async () => {
@@ -284,6 +298,12 @@
         alertMessage("Copied to clipboard!");
       });
 
+      getFromGitHubBtn.addEventListener("click", async () => {
+         await PR.getFromGitHub();
+	 await updatePullRequestTab();
+         PR.save();
+      });
+ 
       submitBtn.addEventListener("click", async () => {
         try {
           await validateToken(token);
@@ -325,7 +345,7 @@
                       const number = await PR.submit(token);
                       submitBtn.disabled = false;
                       pullRequestTab.innerHTML = 'Pull request';
-                      submitBtn.textContent="Update PR";
+                      submitBtn.textContent="Update PR on GitHub";
                       const message = "Submission of PR#" + number + " was successful! ";
                       alertMessage(message);
                       openGitHubBtn.hidden = false;

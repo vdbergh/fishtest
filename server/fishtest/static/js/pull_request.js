@@ -1086,6 +1086,22 @@ class PullRequest {
     return this.numberCache[userData.userBranchKey];
   }
 
+  async getFromGitHub(token) {
+    const userData = await this.getUserData();
+    const options = {
+      state: "all",
+      timeout: this.timeout,
+      dst_user: userData.dstUser,
+      dst_repo: userData.dstRepo,
+      src_user: userData.user,
+      src_ref: userData.branch,
+      token: token,
+    };
+    const PR = await getPullRequestByRefAPI(options);
+    this.body = PR.body;
+    this.title = PR.title;
+  }
+
   async submit(token) {
     const userData = await this.getUserData();
     const options = {
