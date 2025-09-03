@@ -192,8 +192,6 @@
           useCache = true;
         }
         branchTab.innerHTML = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Branch';
-	fixupCommitBtn.disabled = false;
-	rebaseAndSquashBtn.disabled = false;
         checklistTable.hidden = false;
         let branchClean = true;
         try {
@@ -223,7 +221,6 @@
           if (commitIsPR) {
             commitIsPRField.innerHTML = "&check;";
             commitIsPRField.style.color = "green";
-	    fixupCommitBtn.disabled = true;
           } else {
             commitIsPRField.innerHTML = "&cross;";
             commitIsPRField.style.color = "red";
@@ -239,9 +236,8 @@
           branchClean = false;
         }
         branchTab.innerHTML = 'Branch';
-        if (branchClean) {
-          rebaseAndSquashBtn.disabled = true;
-        }
+        fixupCommitBtn.disabled = branchClean;
+	rebaseAndSquashBtn.disabled = branchClean;
         return branchClean;
       }
 
@@ -324,7 +320,11 @@
                       confirm5 = confirm('The source user "' + userData.user + '" is different from the DEV user "' + pullRequestDevUser + '". Continue with submission?');
                     }
                     if(confirm5) {
+                      pullRequestTab.innerHTML = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Pull request';
+                      submitBtn.disabled = true;
                       const number = await PR.submit(token);
+                      submitBtn.disabled = false;
+                      pullRequestTab.innerHTML = 'Pull request';
                       submitBtn.textContent="Update PR";
                       const message = "Submission of PR#" + number + " was successful! ";
                       alertMessage(message);
@@ -339,6 +339,7 @@
           console.error(e);
           const error = await processError(e);
           alertError(error);
+	  pullRequestTab.innerHTML = 'Pull request';
         }
       });
 
