@@ -44,7 +44,7 @@
     <button
       id="submit"
       class="btn btn-primary"
-      >Create PR</button>
+      >Create PR on GitHub</button>
     <button
       id="get-from-github"
       class="btn btn-primary"
@@ -183,7 +183,7 @@
             submitBtn.textContent="Update PR on GitHub";
             openGitHubBtn.hidden = false;
           } else {
-            submitBtn.textContent="Create PR";
+            submitBtn.textContent="Create PR on GitHub";
             openGitHubBtn.hidden = true;
           }
         } catch(e) {
@@ -276,7 +276,7 @@
       });
 
       clearBtn.addEventListener("click", async () => {
-        submitBtn.textContent="Create PR";
+        submitBtn.textContent="Create PR on GitHub";
         // Preserve undo history.
         // This method is officially deprecated but widely
         // supported according to MDN, and there is no
