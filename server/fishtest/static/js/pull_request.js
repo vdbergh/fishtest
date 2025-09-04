@@ -14,6 +14,11 @@ try {
 
 const apiTimeout = 3000;
 
+function compareBranchesURL(user1, branch1, user2, branch2) {
+  user2 = user2 ?? user1;
+  return `https://github.com/${pullRequestDevUser}/${pullRequestDevRepo}/compare/${user1}:${branch1}...${user2}:${branch2}`;
+}
+
 async function getOAutScopesAPI(token, timeout) {
   if (!isClassicPAT(token)) {
     throw new Error("X-OAuth-Scopes are only defined for classic PATs");
@@ -944,7 +949,12 @@ class PullRequest {
 
   async branchLink() {
     const userData = await this.getUserData();
-    const url = `https://github.com/${userData.user}/${userData.repo}/commits/${userData.branch}`;
+    const url = compareBranchesURL(
+      pullRequestDevUser,
+      "master",
+      userData.user,
+      userData.branch,
+    );
     const link = `<a href="${url}" target="github">${userData.userBranchKey}</a>`;
     return link;
   }
